@@ -63,21 +63,32 @@ export const generateBulkAlphaFactors = async (count: number, config: any): Prom
       - Indicators
         MA, SMA, EMA, MACD, RSI, Bollinger Bands, KDJ, Stochastic Oscillator, CCI, ATR, OBV, Ichimoku Cloud, Parabolic SAR, ADX, MFI, Williams %R, VWAP, DMI, ROC, Aroon Indicator
       - Signal Types
-        金叉, 死叉, 交叉, 背离, 隐形背离, 趋势反转, 超买, 超卖, 突破, 假突破, 挤压, 扩张, 零轴穿越, 中轴穿越, 柱状图翻转, 柱状图缩减, 失败摆动, 趋势线突破, 骑乘, 坡度
+        Golden Cross, Death Cross, Crossover, Divergence, Hidden Divergence, Trend Reversal, Overbought, Oversold, Breakout, False Breakout, Squeeze, Expansion, Zero Line Cross, Midline Cross, Histogram Flip, Histogram Shrink, Failure Swing, Trendline Break, Riding, Slope
       - Conditions & Thresholds
-        上轨, 下轨, 中轨, 带宽, 信号线, MACD线, 柱状图, 阈值70/30, 中轴50, 成交量放大, 成交量缩减, 多时间帧, 同步信号, 动能减弱, 趋势加速, 支撑反弹, 阻力回落, 排列, 多重交叉, Time-Serial, Cross-Sectional, D Days, Abs, Log, Sign, Power, Mean_Volume, High-Low, Open-Close, Prev_Close, Turnover
+        Upper Band, Lower Band, Mid Band, Bandwidth, Signal Line, MACD Line, Histogram, Threshold 70/30, Midline 50, Volume Spike, Volume Shrink, Multi-Timeframe, Synchronous Signal, Momentum Wane, Trend Accelerate, Support Bounce, Resistance Reject, Alignment, Multiple Cross, Time-Serial, Cross-Sectional, D Days, Abs, Log, Sign, Power, Mean_Volume, High-Low, Open-Close, Prev_Close, Turnover
       - Composite & Strategy Terms
-        复合因子, 与...复合, 确认信号, 看涨, 看跌, 多头趋势, 空头趋势, 震荡策略, 趋势延续, 反转点, 买入信号, 卖出信号, 过滤器, 伴随, 当...且...时, 创新高/低
-    # Task1
-      create ${count} prompt use some concept in the word list
-    # Task2
-      Perform a deep scan of current BTC/Crypto market conditions. use every promot to generate diverse and mathematically robust alpha factors. Each must have a unique name, a valid Pandas formula, and strong economic intuition based on recent trends.
-    # Task3
-      execute the Pandas formula with BTC data and find best buy or sell threshold value. 
-    # Core requirements
-      High Information Coefficient (IC) and Information Ratio (IR)
-      High trading frequency
-      Factors must be practically actionable and adapted to the current market structure
+        Composite Factor, Combine with..., Confirmation Signal, Bullish, Bearish, Long Trend, Short Trend, Range Strategy, Trend Continuation, Reversal Point, Buy Signal, Sell Signal, Filter, Confluence, When...and..., New High/Low
+
+    # Task 1: Concept Selection
+      Select ${count} unique combinations of concepts from the word list. Ensure diversity in strategy types (Momentum, Mean Reversion, Volatility, etc.).
+
+    # Task 2: Factor Generation
+      For each combination, generate a sophisticated alpha factor tailored for the BTC/Crypto market.
+      - **Context**: The crypto market operates 24/7 with high volatility and regime shifts. Factors should be robust to noise.
+      - **Formula**: The formula MUST be a valid Python expression using \`pandas\` (as pd) and \`pandas_ta\` (as ta). 
+        - Example: \`ta.rsi(df['close'], length=14) / ta.sma(df['volume'], length=20)\`
+        - Assume \`df\` contains 'open', 'high', 'low', 'close', 'volume'.
+      - **Naming**: Create a unique, professional name for each factor (e.g., "VolAdjusted_RSI_Momentum").
+      - **Intuition**: Provide a clear economic or market microstructure intuition. Why should this work for BTC?
+
+    # Task 3: Optimization & Thresholds
+      - Analyze recent market trends (via your internal knowledge) to suggest optimal buy/sell thresholds.
+      - Ensure the logic avoids look-ahead bias (e.g., do not use future data).
+
+    # Core Requirements
+      - **High Information Coefficient (IC)**: Target factors with predictive power for next-period returns.
+      - **Actionability**: Avoid overly complex formulas that are hard to execute or prone to overfitting.
+      - **Syntax Accuracy**: Ensure all generated formulas are syntactically correct for the \`pandas\` and \`pandas_ta\` libraries.
     `,
     config: {
       tools:[ { codeExecution: {} }],
@@ -118,4 +129,62 @@ export const generateBulkAlphaFactors = async (count: number, config: any): Prom
     createdAt: Date.now(),
     sources
   }));
+};
+
+export const generateBacktestPythonCode = async (formula: string): Promise<string> => {
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: `
+    You are an expert Python developer and Quantitative Analyst.
+    Your task is to generate a standalone, executable Python script to backtest a trading strategy based on a given formula and calculate the Information Coefficient (IC).
+
+    Formula: "${formula}"
+
+    Requirements:
+    1.  **Imports**: Import ONLY the necessary packages: \`pandas\`, \`pandas_ta\` (as \`ta\`), \`numpy\` (as \`np\`), \`json\`, \`sys\`.
+    2.  **Input**: Read input data from standard input (stdin) using \`json.load(sys.stdin)\`. The input JSON will contain a key \`priceData\`, which is a list of dictionaries. Each dictionary represents a price point and has keys: \`date\`, \`open\`, \`high\`, \`low\`, \`close\`, \`volume\`.
+    3.  **Data Processing**:
+        *   Convert \`priceData\` to a pandas DataFrame.
+        *   Ensure the \`date\` column is converted to datetime objects.
+        *   Sort the DataFrame by date.
+    4.  **Factor Calculation**:
+        *   Calculate the alpha factor values using the provided \`formula\`.
+        *   Assume the DataFrame \`df\` has columns: 'open', 'high', 'low', 'close', 'volume'.
+        *   Use \`pandas_ta\` (imported as \`ta\`) for any technical indicators required by the formula (e.g., RSI, MACD, etc.).
+        *   Store the result in a column named \`factor\`.
+        *   Handle potential errors in the formula (e.g., division by zero) gracefully (e.g., using \`fillna(0)\` or \`replace([np.inf, -np.inf], 0)\`).
+    5.  **IC Calculation**:
+        *   Calculate the **Information Coefficient (IC)**.
+        *   IC is defined as the Spearman rank correlation between the current period's factor value (\`factor\`) and the *next* period's return.
+        *   Calculate next period's return: \`next_return = df['close'].shift(-1) / df['close'] - 1\`.
+        *   Calculate IC: \`ic = df['factor'].corr(df['next_return'], method='spearman')\`.
+        *   Handle NaN values properly before correlation calculation.
+    6.  **Backtest Simulation**:
+        *   Generate trading signals based on the \`factor\`.
+            *   Normalize the factor (e.g., Z-score) or use quantiles to determine BUY/SELL signals.
+            *   Simple logic: BUY if factor > 90th percentile (or threshold), SELL if factor < 10th percentile. Or use the raw factor if it's already a signal (0/1).
+            *   For this task, use a dynamic threshold or a standard default (e.g., top/bottom 20%) if the formula doesn't specify.
+        *   Calculate \`strategyReturn\`.
+        *   Calculate \`cumulativeStrategy\` and \`cumulativeBenchmark\`.
+        *   Generate a list of \`trades\`.
+        *   Calculate metrics: \`sharpeRatio\`, \`annualizedReturn\`, \`maxDrawdown\`, \`volatility\`, \`winRate\`.
+    7.  **Output**:
+        *   Construct a results dictionary containing:
+            *   \`data\`: List of records with keys: \`date\` (string YYYY-MM-DD), \`strategyReturn\`, \`benchmarkReturn\`, \`cumulativeStrategy\`, \`cumulativeBenchmark\`, \`signal\` ('BUY', 'SELL', or null).
+            *   \`metrics\`: Dictionary with keys: \`sharpeRatio\`, \`annualizedReturn\`, \`maxDrawdown\`, \`volatility\`, \`winRate\`, \`benchmarkName\` (use "Benchmark"), and \`ic\`.
+            *   \`trades\`: List of trade dictionaries.
+        *   Print the JSON string of this dictionary to **stdout**.
+    8.  **Error Handling**: Wrap the main logic in a try-except block. If an error occurs, print a JSON object with an \`error\` key to stdout (or print to stderr).
+    9.  **Constraint**: Do NOT output any markdown formatting (like \`\`\`python). Output ONLY the raw Python code.
+    `,
+    config: {
+      responseMimeType: "text/plain",
+    },
+  });
+
+  const text = response.text;
+  if (!text) throw new Error("Empty response from Gemini");
+  
+  // Clean up code block markers if Gemini adds them despite instructions
+  return text.replace(/^```python\s*/, '').replace(/^```\s*/, '').replace(/```$/, '').trim();
 };

@@ -12,3 +12,28 @@ export const fetchMarketData = async (benchmark: BenchmarkType): Promise<any[]> 
     throw e;
   }
 };
+
+export const runBacktestOnServer = async (
+  formula: string, 
+  benchmark: BenchmarkType,
+  buyThreshold?: string,
+  sellThreshold?: string
+): Promise<any> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/backtest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ formula, benchmark, buyThreshold, sellThreshold })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Backtest failed on server");
+    }
+    
+    return await response.json();
+  } catch (e) {
+    console.error("Server backtest failed:", e);
+    throw e;
+  }
+};

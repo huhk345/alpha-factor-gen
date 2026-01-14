@@ -252,7 +252,7 @@ const App: React.FC = () => {
             </div>
           ) : (
             <div className="max-w-6xl mx-auto space-y-12 pb-24">
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-gray-900 pb-10">
+              <div className="border-b border-gray-900 pb-8 mb-8">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border bg-blue-500/10 text-blue-500 border-blue-500/20">{activeFactor?.category} Mode</span>
@@ -264,31 +264,36 @@ const App: React.FC = () => {
                       <span className="text-[10px] text-red-400 font-black uppercase tracking-widest bg-red-400/10 border border-red-400/20 px-3 py-1 rounded-lg">Sell: {activeFactor.sellThreshold}</span>
                     )}
                   </div>
-                  <h1 className="text-7xl font-black text-white tracking-tighter uppercase italic leading-[0.85]">
-                    {activeFactor?.name?.replace(/_/g, ' ')}
-                  </h1>
-                  <p className="text-gray-400 text-xl max-w-2xl font-bold tracking-tight">{activeFactor?.description}</p>
-                </div>
-                <div className="flex flex-col gap-3 min-w-[240px]">
-                    <div className="flex items-center gap-2 bg-gray-900/50 border border-gray-800 rounded-2xl p-2 px-4">
-                      <Globe className="w-3.5 h-3.5 text-gray-500" />
-                      <select 
-                        value={selectedBenchmark}
-                        onChange={(e) => setSelectedBenchmark(e.target.value as any)}
-                        className="bg-transparent text-xs font-bold uppercase tracking-widest text-gray-300 focus:outline-none cursor-pointer pr-2 flex-1"
-                      >
-                        <option value="BTC-USD">BTC-USD</option>
-                        <option value="ETH-USD">ETH-USD</option>
-                      </select>
+                  
+                  <div className="flex flex-col xl:flex-row xl:items-center gap-6 justify-between">
+                    <h1 className="text-6xl font-black text-white tracking-tighter uppercase italic leading-none max-w-4xl">
+                      {activeFactor?.name?.replace(/_/g, ' ')}
+                    </h1>
+                    
+                    <div className="flex items-center gap-3 shrink-0">
+                        <div className="flex items-center gap-2 bg-gray-900/50 border border-gray-800 rounded-xl px-4 h-12">
+                          <Globe className="w-3.5 h-3.5 text-gray-500" />
+                          <select 
+                            value={selectedBenchmark}
+                            onChange={(e) => setSelectedBenchmark(e.target.value as any)}
+                            className="bg-transparent text-xs font-bold uppercase tracking-widest text-gray-300 focus:outline-none cursor-pointer pr-2"
+                          >
+                            <option value="BTC-USD">BTC-USD</option>
+                            <option value="ETH-USD">ETH-USD</option>
+                          </select>
+                        </div>
+                        <button 
+                          onClick={() => handleRunSimulation(selectedBenchmark)}
+                          disabled={isSimulating}
+                          className="h-12 px-6 bg-white hover:bg-gray-200 text-black text-xs font-black rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] uppercase tracking-tighter disabled:opacity-50"
+                        >
+                            {isFetchingData ? <CloudDownload className="animate-bounce w-4 h-4" /> : <Play className="w-4 h-4" />}
+                            Run Simulation
+                        </button>
                     </div>
-                    <button 
-                      onClick={() => handleRunSimulation(selectedBenchmark)}
-                      disabled={isSimulating}
-                      className="px-8 py-4 bg-white hover:bg-gray-200 text-black text-xs font-black rounded-2xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] uppercase tracking-tighter disabled:opacity-50"
-                    >
-                        {isFetchingData ? <CloudDownload className="animate-bounce" /> : <Play />}
-                        Run Simulation
-                    </button>
+                  </div>
+
+                  <p className="text-gray-400 text-lg max-w-3xl font-bold tracking-tight">{activeFactor?.description}</p>
                 </div>
               </div>
 

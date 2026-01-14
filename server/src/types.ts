@@ -28,6 +28,10 @@ export interface AlphaFactor {
 export interface PricePoint {
   date: string;
   close: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  volume?: number;
 }
 
 export interface BacktestMetrics {
@@ -37,6 +41,7 @@ export interface BacktestMetrics {
   volatility: number;
   winRate: number;
   benchmarkName: string;
+  ic?: number;
 }
 
 export interface BacktestDataPoint {

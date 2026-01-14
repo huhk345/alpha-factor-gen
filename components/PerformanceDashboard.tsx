@@ -4,7 +4,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Dot
 } from 'recharts';
 import { BacktestDataPoint, BacktestMetrics, Trade } from '../types';
-import { TrendingUp, AlertTriangle, Activity, BarChart3, Info, List } from 'lucide-react';
+import { TrendingUp, AlertTriangle, Activity, BarChart3, Info, List, BrainCircuit } from 'lucide-react';
 
 interface PerformanceDashboardProps {
   data: BacktestDataPoint[];
@@ -16,7 +16,7 @@ interface PerformanceDashboardProps {
 const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ data, metrics, trades, factorName }) => {
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <MetricCard 
           label="Sharpe Ratio" 
           value={metrics.sharpeRatio.toFixed(2)} 
@@ -39,6 +39,12 @@ const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ data, metri
           label="Volatility" 
           value={`${metrics.volatility.toFixed(1)}%`} 
           icon={<BarChart3 className="text-purple-500" />}
+          trend=""
+        />
+        <MetricCard 
+          label="IC (Info Coeff)" 
+          value={metrics.ic !== undefined ? metrics.ic.toFixed(4) : "N/A"} 
+          icon={<BrainCircuit className="text-yellow-500" />}
           trend=""
         />
       </div>
@@ -132,7 +138,7 @@ const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ data, metri
         </div>
       </div>
       
-      <div className="bg-blue-600/5 border border-blue-600/20 rounded-2xl p-4 flex gap-4">
+      <div className="bg-blue-600/5 border border-blue-600/20 rounded-2xl p-4 flex items-center gap-4">
         <div className="p-2 bg-blue-600/20 rounded-lg h-fit">
             <Info className="w-5 h-5 text-blue-400" />
         </div>
@@ -174,9 +180,9 @@ const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ data, metri
                         {trade.type}
                       </span>
                     </td>
-                    <td className="py-4 text-white font-medium">${trade.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td className="py-4 font-mono text-xs">{trade.quantity.toFixed(4)}</td>
-                    <td className="py-4 text-white font-medium">${trade.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="py-4 text-white font-medium">${trade.price?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</td>
+                    <td className="py-4 font-mono text-xs">{trade.quantity?.toFixed(4) ?? '0.0000'}</td>
+                    <td className="py-4 text-white font-medium">${trade.amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0.00'}</td>
                   </tr>
                 ))
               ) : (
@@ -193,7 +199,7 @@ const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ data, metri
 };
 
 const MetricCard = ({ label, value, icon, trend }: { label: string, value: string, icon: React.ReactNode, trend?: string }) => (
-  <div className="bg-gray-950 border border-gray-800 rounded-2xl p-5 hover:border-gray-700 transition-colors">
+  <div className="h-full bg-gray-950 border border-gray-800 rounded-2xl p-5 hover:border-gray-700 transition-colors flex flex-col justify-between">
     <div className="flex justify-between items-start mb-3">
       <div className="p-2 bg-gray-900 rounded-lg">{icon}</div>
       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${trend?.startsWith('+') ? 'bg-green-500/10 text-green-500' : 'bg-gray-800 text-gray-400'}`}>

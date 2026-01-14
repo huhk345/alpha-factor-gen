@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
-import { getMarketData } from './services/dataService';
+import { getMarketData, runBacktest } from './services/dataService';
 import { generateAlphaFactor, generateBulkAlphaFactors } from './services/geminiService';
 import * as db from './services/dbService';
 import { BenchmarkType } from './types';
@@ -22,6 +22,21 @@ app.get('/api/market-data', async (req, res) => {
     
     const data = await getMarketData(benchmark as BenchmarkType);
     res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Backtest Route
+app.post('/api/backtest', async (req, res) => {
+  try {
+    const { formula, benchmark, buyThreshold, sellThreshold } = req.body;
+    if (!formula || !benchmark) {
+      return res.status(400).json({ error: 'Formula and benchmark are required' });
+    }
+    
+    const result = await runBacktest(formula, benchmark as BenchmarkType, buyThreshold, sellThreshold);
+    res.json(result);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

@@ -1,6 +1,8 @@
-import { BenchmarkType, PricePoint } from "../types";
+import { BenchmarkType, PricePoint, BacktestResult } from "../types";
 import { setGlobalDispatcher, ProxyAgent } from 'undici';
 import YahooFinance from 'yahoo-finance2';
+import axios from 'axios';
+import { generateBacktestPythonCode } from './geminiService';
 
 // Set up proxy for undici (fetch)
 const proxyUrl = 'http://localhost:4780';
@@ -33,7 +35,11 @@ async function fetchYahooFinanceData(ticker: string): Promise<PricePoint[]> {
       .filter(quote => quote.date && quote.close !== null && quote.close !== undefined)
       .map(quote => ({
         date: new Date(quote.date).toISOString().split('T')[0],
-        close: quote.close as number
+        close: quote.close as number,
+        open: quote.open as number,
+        high: quote.high as number,
+        low: quote.low as number,
+        volume: quote.volume as number
       }));
   } catch (e: any) {
     console.error(`Yahoo Finance fetch failed for ${ticker}:`, e.message);
@@ -55,4 +61,49 @@ export const getMarketData = async (benchmark: BenchmarkType): Promise<PricePoin
   }
   
   throw new Error(`Unsupported benchmark: ${benchmark}`);
+};
+
+export const runBacktest = async (
+  formula: string, 
+  benchmark: BenchmarkType,
+  buyThreshold?: string,
+  sellThreshold?: string
+): Promise<BacktestResult> => {
+  const priceData = await getMarketData(benchmark);
+  
+  try {
+    // Generate Python script using Gemini
+    const pythonScript = await generateBacktestPythonCode(formula);
+    
+    // Call Python Service
+    try {
+      const response = await axios.post('http://localhost:5001/execute', {
+        code: pythonScript,
+        data: {
+          priceData,
+          formula,
+          benchmark,
+          buyThreshold,
+          sellThreshold
+        }
+      });
+
+      const result = response.data;
+      
+      if (result.status === 'error') {
+         throw new Error(`Python Service Error: ${result.error}\nStdout: ${result.stdout}`);
+      }
+      
+      return result.result;
+
+    } catch (e: any) {
+         if (axios.isAxiosError(e)) {
+            throw new Error(`Python Service HTTP Error: ${e.message} - ${JSON.stringify(e.response?.data)}`);
+         }
+         throw new Error(`Failed to execute backtest on python service: ${e.message}`);
+    }
+
+  } catch (e: any) {
+    throw new Error(`Failed to run backtest: ${e.message}`);
+  }
 };
