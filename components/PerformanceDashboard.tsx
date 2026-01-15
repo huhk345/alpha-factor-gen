@@ -1,8 +1,7 @@
 
-import React from 'react';
-import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Dot
-} from 'recharts';
+import React, { useEffect, useRef } from 'react';
+import type { IChartApi } from 'lightweight-charts';
+import { createChart, ColorType } from 'lightweight-charts';
 import { BacktestDataPoint, BacktestMetrics, Trade } from '../types';
 import { TrendingUp, AlertTriangle, Activity, BarChart3, Info, List, BrainCircuit } from 'lucide-react';
 
@@ -14,6 +13,83 @@ interface PerformanceDashboardProps {
 }
 
 const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ data, metrics, trades, factorName }) => {
+  const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+
+  useEffect(() => {
+    if (!chartContainerRef.current || data.length === 0) return;
+
+    if (chartRef.current) {
+      chartRef.current.remove();
+      chartRef.current = null;
+    }
+
+    const chart = createChart(chartContainerRef.current, {
+      width: chartContainerRef.current.clientWidth,
+      height: 350,
+      layout: {
+        background: { type: ColorType.Solid, color: '#020617' },
+        textColor: '#9ca3af'
+      },
+      grid: {
+        vertLines: { color: '#111827' },
+        horzLines: { color: '#111827' }
+      },
+      rightPriceScale: {
+        borderColor: '#1f2937'
+      },
+      timeScale: {
+        borderColor: '#1f2937',
+        timeVisible: true,
+        secondsVisible: false
+      }
+    });
+
+    const strategySeries = chart.addAreaSeries({
+      lineColor: '#3b82f6',
+      topColor: 'rgba(59,130,246,0.4)',
+      bottomColor: 'rgba(15,23,42,0.1)',
+      lineWidth: 2
+    });
+
+    const benchmarkSeries = chart.addLineSeries({
+      color: '#4b5563',
+      lineWidth: 1
+    });
+
+    const strategyData = data.map(point => ({
+      time: point.date as any,
+      value: point.cumulativeStrategy
+    }));
+
+    const benchmarkData = data.map(point => ({
+      time: point.date as any,
+      value: point.cumulativeBenchmark
+    }));
+
+    strategySeries.setData(strategyData);
+    benchmarkSeries.setData(benchmarkData);
+
+    chart.timeScale().fitContent();
+
+    const handleResize = () => {
+      if (!chartContainerRef.current) return;
+      chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+    };
+
+    chartRef.current = chart;
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+      }
+    };
+  }, [data]);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -68,73 +144,7 @@ const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ data, metri
         </div>
         
         <div className="h-[350px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorStrategy" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1f2937" />
-              <XAxis 
-                dataKey="date" 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{fill: '#4b5563', fontSize: 10}}
-                minTickGap={30}
-              />
-              <YAxis 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{fill: '#4b5563', fontSize: 10}}
-                domain={['auto', 'auto']}
-              />
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', borderRadius: '12px' }}
-                itemStyle={{ fontSize: '12px' }}
-                labelStyle={{ fontSize: '10px', color: '#9ca3af', marginBottom: '4px' }}
-              />
-              <Area 
-                type="monotone" 
-                dataKey="cumulativeStrategy" 
-                stroke="#3b82f6" 
-                strokeWidth={2}
-                fillOpacity={1} 
-                fill="url(#colorStrategy)" 
-                name="Strategy"
-                dot={(props: any) => {
-                  const { cx, cy, payload } = props;
-                  if (payload.signal === 'BUY') {
-                    return (
-                      <g key={`buy-${payload.date}`}>
-                        <circle cx={cx} cy={cy} r={6} fill="#10b981" />
-                        <text x={cx} y={cy - 10} textAnchor="middle" fill="#10b981" fontSize="10" fontWeight="bold">BUY</text>
-                      </g>
-                    );
-                  }
-                  if (payload.signal === 'SELL') {
-                    return (
-                      <g key={`sell-${payload.date}`}>
-                        <circle cx={cx} cy={cy} r={6} fill="#ef4444" />
-                        <text x={cx} y={cy + 20} textAnchor="middle" fill="#ef4444" fontSize="10" fontWeight="bold">SELL</text>
-                      </g>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="cumulativeBenchmark" 
-                stroke="#4b5563" 
-                strokeWidth={1} 
-                dot={false}
-                strokeDasharray="4 4"
-                name="Benchmark"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div ref={chartContainerRef} className="h-full w-full" />
         </div>
       </div>
       

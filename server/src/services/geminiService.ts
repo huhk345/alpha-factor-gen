@@ -136,46 +136,36 @@ export const generateBacktestPythonCode = async (formula: string): Promise<strin
     model: 'gemini-3-flash-preview',
     contents: `
     You are an expert Python developer and Quantitative Analyst.
-    Your task is to generate a standalone, executable Python script to backtest a trading strategy based on a given formula and calculate the Information Coefficient (IC).
+
+    Your task is to generate ONLY the factor calculation code snippet for a given alpha formula.
+    This snippet will be executed inside an existing Python backtest framework that already handles:
+    - Imports and input parsing
+    - Data processing (priceData -> pandas DataFrame df)
+    - IC calculation
+    - Backtest simulation and metrics
+    - JSON output
 
     Formula: "${formula}"
 
     Requirements:
-    1.  **Imports**: Import ONLY the necessary packages: \`pandas\`, \`pandas_ta\` (as \`ta\`), \`numpy\` (as \`np\`), \`json\`, \`sys\`.
-    2.  **Input**: Read input data from standard input (stdin) using \`json.load(sys.stdin)\`. The input JSON will contain a key \`priceData\`, which is a list of dictionaries. Each dictionary represents a price point and has keys: \`date\`, \`open\`, \`high\`, \`low\`, \`close\`, \`volume\`.
-    3.  **Data Processing**:
-        *   Convert \`priceData\` to a pandas DataFrame.
-        *   Ensure the \`date\` column is converted to datetime objects.
-        *   Sort the DataFrame by date.
-    4.  **Factor Calculation**:
-        *   Calculate the alpha factor values using the provided \`formula\`.
-        *   Assume the DataFrame \`df\` has columns: 'open', 'high', 'low', 'close', 'volume'.
-        *   Use \`pandas_ta\` (imported as \`ta\`) for any technical indicators required by the formula (e.g., RSI, MACD, etc.).
-        *   Store the result in a column named \`factor\`.
-        *   Handle potential errors in the formula (e.g., division by zero) gracefully (e.g., using \`fillna(0)\` or \`replace([np.inf, -np.inf], 0)\`).
-    5.  **IC Calculation**:
-        *   Calculate the **Information Coefficient (IC)**.
-        *   IC is defined as the Spearman rank correlation between the current period's factor value (\`factor\`) and the *next* period's return.
-        *   Calculate next period's return: \`next_return = df['close'].shift(-1) / df['close'] - 1\`.
-        *   Calculate IC: \`ic = df['factor'].corr(df['next_return'], method='spearman')\`.
-        *   Handle NaN values properly before correlation calculation.
-    6.  **Backtest Simulation**:
-        *   Generate trading signals based on the \`factor\`.
-            *   Normalize the factor (e.g., Z-score) or use quantiles to determine BUY/SELL signals.
-            *   Simple logic: BUY if factor > 90th percentile (or threshold), SELL if factor < 10th percentile. Or use the raw factor if it's already a signal (0/1).
-            *   For this task, use a dynamic threshold or a standard default (e.g., top/bottom 20%) if the formula doesn't specify.
-        *   Calculate \`strategyReturn\`.
-        *   Calculate \`cumulativeStrategy\` and \`cumulativeBenchmark\`.
-        *   Generate a list of \`trades\`.
-        *   Calculate metrics: \`sharpeRatio\`, \`annualizedReturn\`, \`maxDrawdown\`, \`volatility\`, \`winRate\`.
-    7.  **Output**:
-        *   Construct a results dictionary containing:
-            *   \`data\`: List of records with keys: \`date\` (string YYYY-MM-DD), \`strategyReturn\`, \`benchmarkReturn\`, \`cumulativeStrategy\`, \`cumulativeBenchmark\`, \`signal\` ('BUY', 'SELL', or null).
-            *   \`metrics\`: Dictionary with keys: \`sharpeRatio\`, \`annualizedReturn\`, \`maxDrawdown\`, \`volatility\`, \`winRate\`, \`benchmarkName\` (use "Benchmark"), and \`ic\`.
-            *   \`trades\`: List of trade dictionaries.
-        *   Print the JSON string of this dictionary to **stdout**.
-    8.  **Error Handling**: Wrap the main logic in a try-except block. If an error occurs, print a JSON object with an \`error\` key to stdout (or print to stderr).
-    9.  **Constraint**: Do NOT output any markdown formatting (like \`\`\`python). Output ONLY the raw Python code.
+    1. Assume a pandas DataFrame named df already exists with columns: 'open', 'high', 'low', 'close', 'volume'.
+    2. Assume the following modules are already imported and available:
+       * pandas as pd
+       * numpy as np
+       * pandas_ta as ta
+    3. Using the provided formula and any necessary pandas_ta indicators, compute the alpha factor values.
+    4. Store the final factor values in a column named 'factor', i.e. df['factor'].
+    5. Handle numerical issues robustly:
+       * Replace inf and -inf with 0
+       * Fill NaN values with 0
+    6. You may create intermediate helper columns, but the final signal must be in df['factor'].
+    7. Do NOT include any code related to:
+       * Reading from stdin
+       * IC calculation
+       * Backtest simulation
+       * Printing or returning JSON
+       * The __name__ == "__main__" guard
+    8. Output ONLY raw Python code for the factor calculation snippet. Do NOT wrap it in markdown fences.
     `,
     config: {
       responseMimeType: "text/plain",
@@ -185,6 +175,5 @@ export const generateBacktestPythonCode = async (formula: string): Promise<strin
   const text = response.text;
   if (!text) throw new Error("Empty response from Gemini");
   
-  // Clean up code block markers if Gemini adds them despite instructions
   return text.replace(/^```python\s*/, '').replace(/^```\s*/, '').replace(/```$/, '').trim();
 };

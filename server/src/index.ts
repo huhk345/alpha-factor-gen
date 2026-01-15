@@ -14,6 +14,23 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+app.use((req, res, next) => {
+  const start = Date.now();
+  const { method, originalUrl } = req;
+  const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  (req as any).requestId = requestId;
+  console.log(`[HTTP] [${requestId}] ${method} ${originalUrl}`);
+  if (method === 'POST') {
+    const bodyPreview = JSON.stringify(req.body || {});
+    console.log(`[HTTP] [${requestId}] Body: ${bodyPreview.slice(0, 500)}`);
+  }
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[HTTP] [${requestId}] ${res.statusCode} ${method} ${originalUrl} - ${duration}ms`);
+  });
+  next();
+});
+
 // Market Data Routes
 app.get('/api/market-data', async (req, res) => {
   try {
@@ -35,9 +52,10 @@ app.post('/api/backtest', async (req, res) => {
       return res.status(400).json({ error: 'Formula and benchmark are required' });
     }
     
-    const result = await runBacktest(formula, benchmark as BenchmarkType, buyThreshold, sellThreshold);
+    const result = await runBacktest(formula, benchmark as BenchmarkType, buyThreshold, sellThreshold, (req as any).requestId);
     res.json(result);
   } catch (error: any) {
+    console.error(`[HTTP] [${(req as any).requestId}] Backtest error:`, error.message);
     res.status(500).json({ error: error.message });
   }
 });

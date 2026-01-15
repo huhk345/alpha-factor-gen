@@ -297,27 +297,55 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              {activeTab === 'overview' && simulationData && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                    <div className="lg:col-span-2 space-y-10">
+              {activeTab === 'overview' && (
+                <div className="relative">
+                  {simulationData ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                      <div className="lg:col-span-2 space-y-10">
                         <PerformanceDashboard 
-                            data={simulationData.data} 
-                            metrics={simulationData.metrics}
-                            trades={simulationData.trades}
-                            factorName={activeFactor?.name || ''}
+                          data={simulationData.data} 
+                          metrics={simulationData.metrics}
+                          trades={simulationData.trades}
+                          factorName={activeFactor?.name || ''}
                         />
-                    </div>
-                    <div className="space-y-10">
+                      </div>
+                      <div className="space-y-10">
                         <div className="bg-gray-900/30 border border-gray-800 rounded-[32px] p-8 space-y-6">
-                            <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Signal Intuition</h4>
-                            <p className="text-gray-300 leading-relaxed font-bold text-lg">{activeFactor?.intuition}</p>
+                          <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Signal Intuition</h4>
+                          <p className="text-gray-300 leading-relaxed font-bold text-lg">{activeFactor?.intuition}</p>
                         </div>
                         <div className="bg-gray-900/30 border border-gray-800 rounded-[32px] p-8">
-                             <div className="bg-black/60 rounded-2xl p-6 border border-gray-800">
-                                <code className="text-sm text-blue-400 font-mono break-all font-bold leading-relaxed">{activeFactor?.formula}</code>
-                             </div>
+                          <div className="bg-black/60 rounded-2xl p-6 border border-gray-800">
+                            <code className="text-sm text-blue-400 font-mono break-all font-bold leading-relaxed">{activeFactor?.formula}</code>
+                          </div>
                         </div>
+                      </div>
                     </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-64 rounded-[32px] border border-dashed border-gray-800 bg-gray-900/20">
+                      <div className="text-center space-y-2">
+                        <p className="text-xs font-black uppercase tracking-widest text-gray-600">No Simulation Yet</p>
+                        <p className="text-sm text-gray-500">Run a simulation to visualize performance and trade history.</p>
+                      </div>
+                    </div>
+                  )}
+                  {isSimulating && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-xl rounded-[32px] z-20">
+                      <div className="flex flex-col items-center gap-6">
+                        <div className="relative">
+                          <div className="w-20 h-20 rounded-full border-2 border-blue-500/40 border-t-transparent border-b-transparent animate-spin" />
+                          <div className="absolute inset-3 rounded-full border-2 border-indigo-400/40 border-l-transparent border-r-transparent animate-spin" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-xs font-black uppercase tracking-[0.35em] text-blue-200">ALPHA</span>
+                          </div>
+                        </div>
+                        <div className="text-center space-y-1">
+                          <p className="text-sm font-black uppercase tracking-[0.35em] text-gray-200">RUNNING SIMULATION</p>
+                          <p className="text-xs text-gray-500 font-medium tracking-[0.25em] uppercase">Market Regime Backtest</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
