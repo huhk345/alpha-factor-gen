@@ -27,7 +27,7 @@ def calculate_ic(df):
         temp = temp[["factor", "next_return"]].replace([np.inf, -np.inf], np.nan).dropna()
         if temp.empty:
             return float("nan")
-        return float(temp["factor"].corr(temp["next_return"], method="spearman"))
+        return np.abs(temp["factor"].corr(temp["next_return"], method="spearman"))
     except Exception:
         return float("nan")
 
