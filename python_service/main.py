@@ -164,6 +164,7 @@ async def execute_backtest(request: BacktestRequest):
             return {"status": "error", "error": "priceData must contain date and close fields"}
         df["date"] = pd.to_datetime(df["date"])
         df = df.sort_values("date").reset_index(drop=True)
+        df = df.set_index("date", drop=False)
         local_vars = {"df": df, "ta": ta, "np": np, "pd": pd}
         code = request.code or ""
         start = time.time()
