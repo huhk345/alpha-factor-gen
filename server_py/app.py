@@ -70,7 +70,9 @@ def _verify_google_token(access_token: str):
 
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
-    if request.url.path.startswith("/api/") and request.method != "OPTIONS":
+    if os.getenv("PY_ENV") == "DEBUG":
+        request.state.userinfo = { 'sub' : os.getenv("TEST_USER_ID") }
+    elif request.url.path.startswith("/api/") and request.method != "OPTIONS":
         auth_header = request.headers.get("Authorization") or ""
         if not auth_header.startswith("Bearer "):
             return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
