@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+supabase
+google-genai
+yfinance[full]
+pandas
+numpy
+pandas_ta
+requests
+
