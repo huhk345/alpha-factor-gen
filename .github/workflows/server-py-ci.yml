@@ -32,9 +32,8 @@ jobs:
           pip install fastapi "uvicorn[standard]" python-dotenv supabase "google-genai" "yfinance[full]" pandas numpy pandas_ta requests
 
       - name: Type-check server_py imports
-        working-directory: server_py
         run: |
-          python -c "import app, data_service, db_service, executor, gemini_service, models"
+          python -c "import server_py.app, server_py.data_service, server_py.db_service, server_py.executor, server_py.gemini_service, server_py.models"
 
       - name: Compile server_py
         run: |
