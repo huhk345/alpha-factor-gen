@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: alphagen-ai-server-py
+    env: python
+    plan: free
+    region: frankfurt
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r server_py/requirements.txt
+    startCommand: uvicorn server_py.app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: ALLOWED_EMAILS
+        sync: false

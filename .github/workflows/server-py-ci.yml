@@ -1,0 +1,40 @@
+name: server_py backend CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  server-py-ci:
+    runs-on: ubuntu-latest
+    env:
+      GEMINI_API_KEY: dummy_key
+      SUPABASE_URL: https://example.supabase.co
+      SUPABASE_ANON_KEY: dummy_key
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install fastapi "uvicorn[standard]" python-dotenv supabase "google-genai" "yfinance[full]" pandas numpy pandas_ta requests
+
+      - name: Type-check server_py imports
+        run: |
+          python -c "import server_py.app, server_py.data_service, server_py.db_service, server_py.executor, server_py.gemini_service, server_py.models"
+
+      - name: Compile server_py
+        run: |
+          python -m compileall server_py
