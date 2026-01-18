@@ -104,6 +104,7 @@ class BacktestRequest(BaseModel):
     sellThreshold: Optional[str] = None
     pythonCode: Optional[str] = None
     customCode: Optional[str] = None
+    factorId: Optional[str] = None
 
 
 class GenerateRequest(BaseModel):

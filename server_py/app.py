@@ -158,12 +158,23 @@ def get_market_data(benchmark: BenchmarkType):
 @app.post("/api/backtest")
 def run_backtest(
     body: BacktestRequest,
+    request: Request,
     request_id: str = Depends(request_id_dependency),
 ):
     print(f"[HTTP] [{request_id}] /api/backtest called benchmark={body.benchmark} hasFormula={bool(body.formula)}")
     if not body.formula or not body.benchmark:
         raise HTTPException(status_code=400, detail="Formula and benchmark are required")
     try:
+        userinfo = getattr(request.state, "userinfo", None) or {}
+        sub = userinfo.get("sub")
+        user_id = sub
+        factor_id = body.factorId
+        benchmark_label = body.benchmark.value if isinstance(body.benchmark, BenchmarkType) else str(body.benchmark)
+        if user_id and factor_id:
+            cached = db_service.fetch_latest_backtest_today(user_id, factor_id, benchmark_label)
+            if cached:
+                print(f"[HTTP] [{request_id}] Using cached backtest result for user={user_id} factor={factor_id} benchmark={benchmark_label}")
+                return cached
         print(f"[HTTP] [{request_id}] Dispatching to data_service.run_backtest")
         result = data_service.run_backtest(
             formula=body.formula,

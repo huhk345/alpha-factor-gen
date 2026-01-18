@@ -32,13 +32,14 @@ export const runBacktestOnServer = async (
   buyThreshold?: string,
   sellThreshold?: string,
   pythonCode?: string,
-  customCode?: string
+  customCode?: string,
+  factorId?: string
 ): Promise<BacktestResult> => {
   try {
     const response = await fetch(`${API_BASE_URL}/backtest`, {
       method: "POST",
       headers: buildAuthHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ formula, benchmark, buyThreshold, sellThreshold, pythonCode, customCode }),
+      body: JSON.stringify({ formula, benchmark, buyThreshold, sellThreshold, pythonCode, customCode, factorId }),
     });
 
     if (!response.ok) {

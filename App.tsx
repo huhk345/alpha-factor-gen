@@ -133,7 +133,8 @@ const App: React.FC = () => {
         activeFactor.buyThreshold,
         activeFactor.sellThreshold,
         activeFactor.pythonCode,
-        benchmark === 'CUSTOM_A' ? customAShareCode : undefined
+        benchmark === 'CUSTOM_A' ? customAShareCode : undefined,
+        activeFactor.id
       );
       setSimulationData(result);
       

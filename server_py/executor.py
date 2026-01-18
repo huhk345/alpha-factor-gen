@@ -12,7 +12,9 @@ def calculate_ic(df: pd.DataFrame) -> float:
     try:
         temp = df.copy()
         temp["next_return"] = temp["close"].shift(-1) / temp["close"] - 1
+        print(temp)
         temp = temp[["factor", "next_return"]].replace([np.inf, -np.inf], np.nan).dropna()
+        print(temp)
         if temp.empty:
             return float("nan")
         return np.abs(temp["factor"].corr(temp["next_return"], method="spearman"))
@@ -121,6 +123,7 @@ def run_backtest(
             }
         )
     ic = calculate_ic(df)
+    ic_clean = _clean_num(ic, 0.0)
     result: Dict[str, Any] = {
         "data": records,
         "metrics": {
@@ -130,7 +133,7 @@ def run_backtest(
             "volatility": _clean_num(vol, 0.0),
             "winRate": _clean_num(win_rate, 0.0),
             "benchmarkName": str(benchmark_name),
-            "ic": None if ic is None or (isinstance(ic, float) and (np.isnan(ic) or np.isinf(ic))) else float(ic),
+            "ic": ic_clean,
         },
         "trades": [],
     }

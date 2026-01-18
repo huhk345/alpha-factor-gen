@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List
 
 from supabase import Client, create_client
@@ -112,20 +112,59 @@ def fetch_factors(user_id: str) -> List[AlphaFactor]:
 
 
 def save_backtest_result(user_id: str, factor_id: str, result: BacktestResult) -> None:
+    benchmark_name = result.metrics.benchmarkName
+    supabase.table("backtest_results").delete().eq("user_id", user_id).eq("factor_id", factor_id).eq("benchmark_name", benchmark_name).execute()
     payload = {
         "user_id": user_id,
         "factor_id": factor_id,
-        "benchmark_name": result.metrics.benchmarkName,
+        "benchmark_name": benchmark_name,
         "sharpe_ratio": result.metrics.sharpeRatio,
         "annualized_return": result.metrics.annualizedReturn,
         "max_drawdown": result.metrics.maxDrawdown,
         "volatility": result.metrics.volatility,
         "win_rate": result.metrics.winRate,
+        "ic": result.metrics.ic,
         "data": [p.dict() for p in result.data],
         "trades": [t.dict() for t in result.trades],
         "created_at": datetime.utcnow().isoformat(),
     }
     supabase.table("backtest_results").insert(payload).execute()
+
+
+def fetch_latest_backtest_today(user_id: str, factor_id: str, benchmark_name: str) -> BacktestResult | None:
+    today = datetime.utcnow().date()
+    start = datetime.combine(today, datetime.min.time()).isoformat()
+    end = datetime.combine(today + timedelta(days=1), datetime.min.time()).isoformat()
+    res = (
+        supabase.table("backtest_results")
+        .select("*")
+        .eq("user_id", user_id)
+        .eq("factor_id", factor_id)
+        .eq("benchmark_name", benchmark_name)
+        .gte("created_at", start)
+        .lt("created_at", end)
+        .order("created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    data = getattr(res, "data", None) or []
+    if not data:
+        return None
+    r = data[0]
+    metrics = {
+        "sharpeRatio": r.get("sharpe_ratio"),
+        "annualizedReturn": r.get("annualized_return"),
+        "maxDrawdown": r.get("max_drawdown"),
+        "volatility": r.get("volatility"),
+        "winRate": r.get("win_rate"),
+        "benchmarkName": r.get("benchmark_name"),
+        "ic": r.get("ic"),
+    }
+    return BacktestResult(
+        data=r.get("data") or [],
+        metrics=metrics,
+        trades=r.get("trades") or [],
+    )
 
 
 def fetch_backtest_results(factor_id: str) -> List[BacktestResult]:
@@ -140,6 +179,7 @@ def fetch_backtest_results(factor_id: str) -> List[BacktestResult]:
             "volatility": r.get("volatility"),
             "winRate": r.get("win_rate"),
             "benchmarkName": r.get("benchmark_name"),
+            "ic": r.get("ic"),
         }
         result = BacktestResult(
             data=r.get("data") or [],
