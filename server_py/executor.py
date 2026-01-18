@@ -12,12 +12,12 @@ def calculate_ic(df: pd.DataFrame) -> float:
     try:
         temp = df.copy()
         temp["next_return"] = temp["close"].shift(-1) / temp["close"] - 1
-        print(temp)
         temp = temp[["factor", "next_return"]].replace([np.inf, -np.inf], np.nan).dropna()
-        print(temp)
         if temp.empty:
             return float("nan")
-        return np.abs(temp["factor"].corr(temp["next_return"], method="spearman"))
+        factor_rank = temp["factor"].rank()
+        return_rank = temp["next_return"].rank()
+        return float(np.abs(factor_rank.corr(return_rank)))
     except Exception:
         return float("nan")
 
